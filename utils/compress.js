@@ -7,20 +7,20 @@ const compress_profile_image = async (buffer, quality, width, height) => {
 
         let formatOptions = {};
         switch (metadata.format) {
-            case 'jpeg':
-                formatOptions = { quality };
+            case 'jpeg' || 'jpg':
+                formatOptions = { quality: Math.floor(quality / 100 * 6) };
                 break;
             case 'png':
-                formatOptions = { quality: Math.floor(quality / 100 * 9) };
+                formatOptions = { quality: Math.floor(quality / 100 * 6) };
                 break;
             case 'webp':
-                formatOptions = { quality };
+                formatOptions = { quality: Math.floor(quality / 100 * 6) };
                 break;
             case 'avif':
-                formatOptions = { quality };
+                formatOptions = { quality: Math.floor(quality / 100 * 6) };
                 break;
             default:
-                throw new Error('Unsupported image format');
+                throw new Error('მხარდაუჭერელი ფაილის ტიპი.');
         }
 
         const compressedBuffer = await image
@@ -29,7 +29,7 @@ const compress_profile_image = async (buffer, quality, width, height) => {
 
         return compressedBuffer;
     } catch (error) {
-        console.log(error)
+        console.log("Sharp Error: ", error.message)
     }
 }
 

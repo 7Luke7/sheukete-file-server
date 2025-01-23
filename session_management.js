@@ -25,7 +25,7 @@ const verify_user = async (request) => {
             throw new Error(401)
         }
 
-        return user
+        return JSON.parse(user)
     } catch (error) {
         if (error.message === "401") {
             return 401

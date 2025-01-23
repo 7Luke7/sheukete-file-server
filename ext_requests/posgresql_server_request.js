@@ -1,4 +1,4 @@
-export const postgresql_server_request = async (method, params, headers) => {
+const postgresql_server_request = async (method, params, headers) => {
     try {
         const response = await fetch(`${process.env.POSTGRES_SERVER_DOMAIN}:${process.env.POSTGRES_SERVER_PORT}/${params}`, {
             method: method, 
@@ -7,7 +7,6 @@ export const postgresql_server_request = async (method, params, headers) => {
 
         if (!response.ok) { 
             const data = await response.json()
-            console.log({status: response.status, ...data})
             return {status: response.status, ...data}
         }
         
