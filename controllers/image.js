@@ -14,33 +14,28 @@ const upload_profile_picture = async (req, res, next) => {
   try {
     const session = await verify_user(req);
     const { profId } = req.params;
-    if (session.profId !== profId) throw new Error(401);
+    if (session.profId !== profId || session === 401) throw new Error(401);
     create_user_profile_picture_folder_if_not_exists(session.role);
     const filePath = path.join(
       __dirname,
-      `/../images/${session.role}/profile/${session.profId}.webp`
+      `/../images/${session.role}/profile/medium/${session.profId}.webp`
     );
 
     if (!fs.existsSync(filePath)) {
       const response = await handleFileUpload({
         req,
-        filePath,
+        filePath: path.join(
+          __dirname,
+          `/../images/${session.role}/profile`
+        ),
         destination: "profile",
-        sizes: [50, 180, 180],
+        profId: session.profId
       });
 
       if (response === "success") {
         const stepPercent = await postgresql_server_request(
-          "POST",
+          "GET",
           `${session.role}/increment_step_percent/${profId}`,
-          {
-            body: JSON.stringify({
-              amount: 12.5,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
         );
         return res.status(200).json({
           stepPercent,
@@ -52,9 +47,12 @@ const upload_profile_picture = async (req, res, next) => {
     } else {
       const response = await handleFileUpload({
         req,
-        filePath,
+        filePath: path.join(
+          __dirname,
+          `/../images/${session.role}/profile`
+        ),
         destination: "profile",
-        sizes: [50, 180, 180],
+        profId: session.profId
       });
 
       if (response === "success") {
@@ -72,7 +70,7 @@ const profile_image_no_id = async (req, res, next) => {
     const { role, profId } = req.body;
     if (
       !fs.existsSync(
-        path.join(__dirname, `/../images/${role}/profile/${profId}.webp`)
+        path.join(__dirname, `/../images/${role}/profile/medium/${profId}.webp`)
       )
     ) {
       return res.json({
@@ -116,12 +114,13 @@ const upload_service_images = async (req, res, next) => {
       `/../images/xelosani/${req.params.xelosaniProfId}/services/${req.params.serviceId}`
     );
 
-    const result = await handleFileUpload({
+    const response = await handleFileUpload({
       req,
       filePath,
       destination: "service",
-      sizes: [50, 351, 351],
     });
+    console.log(response)
+    res.status(200).json({message: "ფაილები წარმატებით აიტვირთა."})
   } catch (error) {
     console.log(error);
   }
@@ -169,14 +168,15 @@ const get_all_service_image_names_and_paths = async (req, res, next) => {
   const {profId, publicId} = req.params
   try {
     const base = path.join(__dirname + `/../images/xelosani/${profId}/services/${publicId}`)
-    fs.readdir(`${base}/gallery`, { withFileTypes: true }, (err, entries) => {
+    fs.readdir(`${base}/gallery/medium`, { withFileTypes: true }, (err, entries) => {
       if (err) {
+        console.log(err)
         return console.log("error while looping filenames", err)
       }
       
       const dirs = entries
       .map((entry) => {
-        const fullPath = path.join(base, "gallery", entry.name);
+        const fullPath = path.join(base, "gallery/medium", entry.name);
         const stats = fs.statSync(fullPath);
 
         return {
@@ -188,10 +188,12 @@ const get_all_service_image_names_and_paths = async (req, res, next) => {
       });
 
 
-      fs.stat(`${base}/thumbnail/thumbnail.webp`, (statErr, stats) => {
+      fs.stat(`${base}/thumbnail/medium/thumbnail.webp`, (statErr, stats) => {
         if (statErr) {
           console.error("Error while stat-ing thumbnail:", statErr);
-          return res.status(500).send("Failed to stat thumbnail");
+          return res.status(200).json({
+            gallery: dirs
+          })
         }
   
         const thumbnail = {
@@ -209,6 +211,23 @@ const get_all_service_image_names_and_paths = async (req, res, next) => {
 
     });
   } catch (error) {
+    console.log("isthiserror", error)
+  }
+}
+
+const get_service_gallery_count = (req, res, next) => {
+  const {profId, publicId} = req.params
+  try {
+    fs.readdir(
+      path.join(__dirname, `/../images/xelosani/${profId}/services/${publicId}/gallery/medium`), 
+      (err, files) => {
+        if (err) {
+          throw new Error(err)
+        }
+        res.status(200).json({count: files.length})
+      }
+    )
+  } catch (error) {
     console.log(error)
   }
 }
@@ -225,7 +244,6 @@ const update_service_images = async (req, res, next) => {
       req,
       filePath,
       destination: "service",
-      sizes: [50, 351, 351],
     });
 
     res.status(200).json({message: "success"})
@@ -255,5 +273,6 @@ module.exports = {
   stream_service_thumbnails,
   upload_service_images,
   get_user_profile_image,
+  get_service_gallery_count,
   update_service_images,
 };

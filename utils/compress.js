@@ -8,24 +8,24 @@ const compress_profile_image = async (buffer, quality, width, height) => {
         let formatOptions = {};
         switch (metadata.format) {
             case 'jpeg' || 'jpg':
-                formatOptions = { quality: Math.floor(quality / 100 * 6) };
+                formatOptions = { quality };
                 break;
             case 'png':
-                formatOptions = { quality: Math.floor(quality / 100 * 6) };
+                formatOptions = { quality };
                 break;
             case 'webp':
-                formatOptions = { quality: Math.floor(quality / 100 * 6) };
+                formatOptions = { quality };
                 break;
             case 'avif':
-                formatOptions = { quality: Math.floor(quality / 100 * 6) };
+                formatOptions = { quality };
                 break;
             default:
                 throw new Error('მხარდაუჭერელი ფაილის ტიპი.');
         }
 
         const compressedBuffer = await image
-            .resize({ width: width, height: height, fit: 'cover' })
-            [metadata.format](formatOptions).toFormat("webp").toBuffer()
+            .resize({ width: width, height: height, fit: "inside" })
+            [metadata.format](formatOptions).toFormat("PNG").toBuffer()
 
         return compressedBuffer;
     } catch (error) {
